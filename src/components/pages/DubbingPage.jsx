@@ -1,122 +1,195 @@
 import { motion } from 'motion/react';
-import { ToolPageLayout } from '../shared/ToolPageLayout.jsx';
 import { useState } from 'react';
-import { Play, Pause, Download, Globe } from 'lucide-react';
+import { Upload, ArrowUp } from 'lucide-react';
 
-export function DubbingPage() {
-  const [selectedLanguage, setSelectedLanguage] = useState('es');
-  const [selectedVoice, setSelectedVoice] = useState('natural');
-  const [isProcessing, setIsProcessing] = useState(false);
+export function DubbingPage({ onNavigate }) {
+  const [selectedRatio, setSelectedRatio] = useState('');
+  const [selectedSpeaker, setSelectedSpeaker] = useState('');
+  const [translation, setTranslation] = useState('');
+  const [videoLink, setVideoLink] = useState('');
+  const [dragActive, setDragActive] = useState(false);
 
-  const languages = [
-    { code: 'es', name: 'Spanish', flag: '🇪🇸' },
-    { code: 'fr', name: 'French', flag: '🇫🇷' },
-    { code: 'de', name: 'German', flag: '🇩🇪' },
-    { code: 'it', name: 'Italian', flag: '🇮🇹' },
-    { code: 'pt', name: 'Portuguese', flag: '🇵🇹' },
-    { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
-  ];
+  const ratios = ['9:16', '1:1', '16:9'];
+  const speakers = ['1 Person Speak', '2 Person Speak', '3 Person Speak'];
+  const translationOptions = ['Only audio', 'Audio and Lips'];
 
-  const handleUpload = (file) => {
-    console.log('File uploaded:', file.name);
-    setIsProcessing(true);
-    setTimeout(() => setIsProcessing(false), 2000);
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
   };
 
-  const settingsPanel = (
-    <div className="space-y-6">
-      {/* Target Language */}
-      <div>
-        <label className="text-sm text-[#AAB0B8] mb-3 block">Target Language</label>
-        <div className="grid grid-cols-2 gap-2">
-          {languages.map((lang) => (
-            <button
-              key={lang.code}
-              onClick={() => setSelectedLanguage(lang.code)}
-              className={`
-                p-3 rounded-xl transition-all duration-200 text-left
-                ${selectedLanguage === lang.code
-                  ? 'bg-[#FFCB00] text-[#0B0B0D] ring-2 ring-[#FFCB00]'
-                  : 'bg-[#0B0B0D] text-[#F6F7F9] hover:bg-[#1a1a1c]'
-                }
-              `}
-            >
-              <div className="text-lg mb-1">{lang.flag}</div>
-              <div className="text-xs">{lang.name}</div>
-            </button>
-          ))}
-        </div>
-      </div>
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleNavigate();
+    }
+  };
 
-      {/* Voice Style */}
-      <div>
-        <label className="text-sm text-[#AAB0B8] mb-3 block">Voice Style</label>
-        <select
-          value={selectedVoice}
-          onChange={(e) => setSelectedVoice(e.target.value)}
-          className="w-full bg-[#0B0B0D] text-[#F6F7F9] px-4 py-3 rounded-xl ring-1 ring-white/10 focus:ring-[#FFCB00] outline-none transition-all"
-        >
-          <option value="natural">Natural</option>
-          <option value="professional">Professional</option>
-          <option value="casual">Casual</option>
-          <option value="energetic">Energetic</option>
-        </select>
-      </div>
+  const handleFileInput = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleNavigate();
+    }
+  };
 
-      {/* Preserve Original Audio */}
-      <div className="flex items-center justify-between p-4 bg-[#0B0B0D] rounded-xl">
-        <div>
-          <div className="text-sm mb-1">Preserve Audio</div>
-          <div className="text-xs text-[#AAB0B8]">Keep background music</div>
-        </div>
-        <label className="relative inline-block w-12 h-6">
-          <input type="checkbox" className="opacity-0 w-0 h-0 peer" />
-          <span className="absolute cursor-pointer inset-0 bg-[#1a1a1c] rounded-full transition-all peer-checked:bg-[#FFCB00] before:absolute before:content-[''] before:h-5 before:w-5 before:left-0.5 before:bottom-0.5 before:bg-white before:rounded-full before:transition-all peer-checked:before:translate-x-6"></span>
-        </label>
-      </div>
+  const handleNavigate = () => {
+    if (onNavigate) {
+      onNavigate('dubbing-step-2');
+    }
+  };
 
-      {/* Process Button */}
-      <button
-        disabled={isProcessing}
-        className="w-full px-6 py-4 bg-gradient-to-r from-[#FFCB00] to-[#FFD766] text-[#0B0B0D] rounded-xl shadow-[0_10px_30px_rgba(255,203,0,0.12)] hover:shadow-[0_15px_40px_rgba(255,203,0,0.18)] transition-all duration-200 disabled:opacity-50"
-      >
-        {isProcessing ? 'Processing...' : 'Start Dubbing'}
-      </button>
-    </div>
-  );
+  const handleLoadLink = () => {
+    if (videoLink) {
+      handleNavigate();
+    }
+  };
+
+  const handleUpload = () => {
+    handleNavigate();
+  };
 
   return (
-    <ToolPageLayout
-      title="AI Dubbing"
-      description="Translate and dub your videos into multiple languages while preserving the original voice characteristics"
-      onUpload={handleUpload}
-      settingsPanel={settingsPanel}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-6"
     >
-      {/* Result Preview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        className="bg-[#0F1113] rounded-2xl p-6 ring-1 ring-white/5"
-      >
-        <h3 className="text-lg mb-4">Output Preview</h3>
-        
-        <div className="aspect-video bg-[#0B0B0D] rounded-xl flex items-center justify-center mb-4">
-          <Play className="w-16 h-16 text-[#AAB0B8]" />
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl lg:text-3xl mb-2 text-[#F6F7F9]">AI-Translate</h1>
+        <p className="text-[#AAB0B8]">Live Translate</p>
+      </div>
+
+      {/* Control Panels */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Select Ratio */}
+        <div className="bg-[#0F1113] rounded-xl p-4 ring-1 ring-white/5">
+          <label className="text-sm font-medium text-[#AAB0B8] mb-2 block">
+            Select Ratio
+          </label>
+          <select
+            value={selectedRatio}
+            onChange={(e) => setSelectedRatio(e.target.value)}
+            className="w-full bg-[#0B0B0D] text-[#F6F7F9] px-3 py-2 rounded-lg ring-1 ring-white/10 focus:ring-2 focus:ring-[#FFCB00] outline-none text-sm"
+          >
+            <option value="">Select ratio</option>
+            {ratios.map((ratio) => (
+              <option key={ratio} value={ratio}>{ratio}</option>
+            ))}
+          </select>
         </div>
 
-        <div className="flex items-center gap-4">
-          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#FFCB00] text-[#0B0B0D] rounded-xl hover:shadow-lg transition-all">
-            <Play className="w-4 h-4" />
-            <span>Play</span>
-          </button>
-          <button className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#0B0B0D] text-[#F6F7F9] rounded-xl ring-1 ring-white/10 hover:ring-[#FFCB00]/50 transition-all">
-            <Download className="w-4 h-4" />
-            <span>Download</span>
+        {/* Select Speaker */}
+        <div className="bg-[#0F1113] rounded-xl p-4 ring-1 ring-white/5">
+          <label className="text-sm font-medium text-[#AAB0B8] mb-2 block">
+            Select Speaker
+          </label>
+          <select
+            value={selectedSpeaker}
+            onChange={(e) => setSelectedSpeaker(e.target.value)}
+            className="w-full bg-[#0B0B0D] text-[#F6F7F9] px-3 py-2 rounded-lg ring-1 ring-white/10 focus:ring-2 focus:ring-[#FFCB00] outline-none text-sm"
+          >
+            <option value="">Select Speaker</option>
+            {speakers.map((speaker) => (
+              <option key={speaker} value={speaker}>{speaker}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Translation */}
+        <div className="bg-[#0F1113] rounded-xl p-4 ring-1 ring-white/5">
+          <label className="text-sm font-medium text-[#AAB0B8] mb-2 block">
+            Translation
+          </label>
+          <select
+            value={translation}
+            onChange={(e) => setTranslation(e.target.value)}
+            className="w-full bg-[#0B0B0D] text-[#F6F7F9] px-3 py-2 rounded-lg ring-1 ring-white/10 focus:ring-2 focus:ring-[#FFCB00] outline-none text-sm"
+          >
+            <option value="">Please select</option>
+            {translationOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Add Link Section */}
+      <div className="bg-[#0F1113] rounded-xl p-6 ring-1 ring-white/5">
+        <h3 className="text-lg font-semibold text-[#F6F7F9] mb-1">
+          Add Link
+        </h3>
+        <p className="text-sm text-[#AAB0B8] mb-4">
+          Live video translation Training
+        </p>
+        <div className="flex gap-3">
+          <input
+            type="text"
+            value={videoLink}
+            onChange={(e) => setVideoLink(e.target.value)}
+            placeholder="https://www.youtube.com/watch?v=..."
+            className="flex-1 bg-[#0B0B0D] text-[#F6F7F9] px-4 py-2 rounded-lg ring-1 ring-white/10 focus:ring-2 focus:ring-[#FFCB00] outline-none text-sm placeholder:text-[#AAB0B8]"
+          />
+          <button
+            onClick={handleLoadLink}
+            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+          >
+            Load it
           </button>
         </div>
-      </motion.div>
-    </ToolPageLayout>
+      </div>
+
+      {/* Upload Video Section */}
+      <div className="bg-[#0F1113] rounded-xl p-6 ring-1 ring-white/5">
+        <h3 className="text-lg font-semibold text-[#F6F7F9] mb-1">
+          Upload Video
+        </h3>
+        <p className="text-sm text-[#AAB0B8] mb-4">
+          Local video translation Training
+        </p>
+        <div
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          className={`
+            relative border-2 border-dashed rounded-xl p-8 transition-all duration-200
+            ${dragActive 
+              ? 'border-[#FFCB00] bg-[#FFCB00]/5' 
+              : 'border-white/20 hover:border-[#FFCB00]/50 bg-[#0B0B0D]'
+            }
+          `}
+        >
+          <input
+            type="file"
+            accept="video/mp4"
+            onChange={handleFileInput}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          />
+          <div className="flex flex-col items-center text-center">
+            <div className="w-12 h-12 rounded-full bg-[#FFCB00]/10 flex items-center justify-center mb-3">
+              <ArrowUp className="w-6 h-6 text-[#FFCB00]" />
+            </div>
+            <p className="text-sm text-[#AAB0B8] mb-2">
+              Select the video from your local machine *mp4 only
+            </p>
+            <button
+              onClick={handleUpload}
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
+            >
+              Upload
+            </button>
+          </div>
+        </div>
+      </div>
+    </motion.div>
   );
 }
-

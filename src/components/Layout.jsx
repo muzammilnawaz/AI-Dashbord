@@ -41,8 +41,8 @@ export function Layout({ children, currentPage, onPageChange, onLogout, userEmai
   }, []);
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'dubbing', label: 'Dubbing', icon: Languages },
+    { id: 'dashboard', label: 'Home', icon: LayoutDashboard },
+    { id: 'dubbing', label: 'AI Translate', icon: Languages },
     { id: 'tts', label: 'TTS', icon: Volume2 },
     { id: 'stt', label: 'STT', icon: Mic },
     { id: 'voice-cloning', label: 'Voice Cloning', icon: UserCircle2 },

@@ -53,16 +53,6 @@ export function HeroVideo() {
           playsInline
         />
 
-        {/* Grid overlay - subtle */}
-        <div
-          className="absolute inset-0 opacity-5 z-10"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255, 203, 0, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 203, 0, 0.5) 1px, transparent 1px)',
-            backgroundSize: '50px 50px',
-          }}
-        />
-
         {/* Vignette overlay - subtle */}
         <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/20 z-10" />
 

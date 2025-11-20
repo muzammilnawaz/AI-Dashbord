@@ -1,75 +1,110 @@
 import { motion } from 'motion/react';
-import { 
-  TrendingUp, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle,
-  Play,
-  Download,
-  MoreVertical
-} from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-
-const chartData = [
-  { name: 'Mon', jobs: 12 },
-  { name: 'Tue', jobs: 19 },
-  { name: 'Wed', jobs: 15 },
-  { name: 'Thu', jobs: 25 },
-  { name: 'Fri', jobs: 22 },
-  { name: 'Sat', jobs: 18 },
-  { name: 'Sun', jobs: 14 },
-];
+import { useState, useRef } from 'react';
+import { Download, Play, Pause, Clock, FileText, Video } from 'lucide-react';
 
 export function DashboardPage() {
+  const [playingVideo, setPlayingVideo] = useState(null);
+  const [videoProgress, setVideoProgress] = useState({});
+  const [videoDurations, setVideoDurations] = useState({});
+  const [currentTimes, setCurrentTimes] = useState({});
+  const videoRefs = useRef({});
   const stats = [
-    { label: 'Total Jobs', value: '1,247', change: '+12.5%', trend: 'up' },
-    { label: 'Processing', value: '8', change: 'Live', trend: 'neutral' },
-    { label: 'Completed', value: '1,203', change: '+8.2%', trend: 'up' },
-    { label: 'Failed', value: '36', change: '-2.1%', trend: 'down' },
+    { 
+      label: 'In Progress', 
+      value: '10', 
+      subtitle: 'TTS- Training',
+      bgColor: 'bg-[#0F1113]',
+      textColor: 'text-[#F6F7F9]',
+      icon: Clock
+    },
+    { 
+      label: 'Words Total', 
+      value: '1000000', 
+      subtitle: 'TTS- Training',
+      bgColor: 'bg-[#0F1113]',
+      textColor: 'text-[#F6F7F9]',
+      icon: FileText
+    },
+    { 
+      label: 'Videos Total', 
+      value: '25', 
+      subtitle: 'TTS- Training',
+      bgColor: 'bg-[#0F1113]',
+      textColor: 'text-[#F6F7F9]',
+      icon: Video
+    },
   ];
 
-  const recentJobs = [
+  const videos = [
     {
       id: 1,
-      name: 'Video_Dubbing_Project_01.mp4',
-      type: 'Dubbing',
-      status: 'completed',
-      progress: 100,
-      time: '2 min ago',
+      title: 'PixVerse V4.5 - Camera Push Forward',
+      duration: '1:19:35',
+      videoUrl: '/images/PixVerse_V4.5_Image_Text_1080P_镜头缓缓前推，小男孩身体不动，.mp4',
+      thumbnail: '',
     },
     {
       id: 2,
-      name: 'Podcast_TTS_Episode_12.mp3',
-      type: 'TTS',
-      status: 'processing',
-      progress: 67,
-      time: '5 min ago',
+      title: 'PixVerse V5 - Frame Rotation in Space',
+      duration: '1:19:35',
+      videoUrl: '/images/PixVerse_V5_Image_Text_1080P_镜头快速向前推，相框在太空中旋转3.mp4',
+      thumbnail: '',
     },
     {
       id: 3,
-      name: 'Meeting_Transcript_042.wav',
-      type: 'STT',
-      status: 'completed',
-      progress: 100,
-      time: '12 min ago',
-    },
-    {
-      id: 4,
-      name: 'Voice_Clone_Sarah.mp3',
-      type: 'Voice Cloning',
-      status: 'processing',
-      progress: 34,
-      time: '18 min ago',
-    },
-    {
-      id: 5,
-      name: 'AI_Story_Chapter_05.mp4',
-      type: 'AI Stories',
-      status: 'failed',
-      progress: 0,
-      time: '25 min ago',
+      title: 'ZebraCat - Login Animation',
+      duration: '0:00',
+      videoUrl: '/images/zebracat-login3.webm',
+      thumbnail: '',
     },
   ];
+
+  const handleVideoClick = (videoId) => {
+    const video = videoRefs.current[videoId];
+    if (!video) return;
+
+    if (playingVideo === videoId) {
+      // Pause if already playing
+      video.pause();
+      setPlayingVideo(null);
+    } else {
+      // Pause all other videos
+      Object.keys(videoRefs.current).forEach((id) => {
+        if (videoRefs.current[id] && id !== videoId) {
+          videoRefs.current[id].pause();
+          videoRefs.current[id].currentTime = 0;
+        }
+      });
+      // Play clicked video
+      video.play();
+      setPlayingVideo(videoId);
+    }
+  };
+
+  const handleVideoEnd = (videoId) => {
+    setPlayingVideo(null);
+  };
+
+  const formatTime = (seconds) => {
+    if (!seconds || isNaN(seconds)) return '0:00';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleVideoLoadedMetadata = (videoId, videoElement) => {
+    if (videoElement && videoElement.duration) {
+      setVideoDurations((prev) => ({
+        ...prev,
+        [videoId]: videoElement.duration,
+      }));
+    }
+  };
 
   return (
     <motion.div
@@ -79,150 +114,142 @@ export function DashboardPage() {
       className="space-y-8"
     >
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
-            className="bg-[#0F1113] rounded-2xl p-6 ring-1 ring-white/5 hover:ring-[#FFCB00]/30 transition-all duration-200"
+            className={`${stat.bgColor} rounded-xl p-6 shadow-sm`}
           >
-            <div className="flex items-start justify-between mb-4">
-              <span className="text-[#AAB0B8] text-sm">{stat.label}</span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                stat.trend === 'up' ? 'bg-green-400/10 text-green-400' :
-                stat.trend === 'down' ? 'bg-red-400/10 text-red-400' :
-                'bg-[#FFCB00]/10 text-[#FFCB00]'
-              }`}>
-                {stat.change}
-              </span>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className={`text-3xl font-bold mb-2 ${stat.textColor}`}>
+                  {stat.value}
+                </div>
+                <div className={`text-sm font-medium ${stat.textColor} opacity-80`}>
+                  {stat.label}
+                </div>
+                <div className={`text-xs mt-1 ${stat.textColor} opacity-60`}>
+                  {stat.subtitle}
+                </div>
+              </div>
+              <div className={`w-12 h-12 ${stat.bgColor} border border-white/10 rounded-lg flex items-center justify-center`}>
+                <stat.icon className={`w-6 h-6 ${stat.textColor} opacity-80`} />
+              </div>
             </div>
-            <div className="text-3xl">{stat.value}</div>
           </motion.div>
         ))}
       </div>
 
-      {/* Chart */}
+      {/* Video Translate Done Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="bg-[#0F1113] rounded-2xl p-6 ring-1 ring-white/5"
+        className="space-y-6"
       >
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-xl mb-1">Job Activity</h3>
-            <p className="text-[#AAB0B8] text-sm">Last 7 days</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-[#FFCB00]" />
-            <span className="text-sm text-[#AAB0B8]">Jobs</span>
-          </div>
-        </div>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="colorJobs" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#FFCB00" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#FFCB00" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
-              <XAxis dataKey="name" stroke="#AAB0B8" />
-              <YAxis stroke="#AAB0B8" />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#0F1113', 
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '8px',
-                  color: '#F6F7F9'
-                }}
-              />
-              <Area 
-                type="monotone" 
-                dataKey="jobs" 
-                stroke="#FFCB00" 
-                strokeWidth={2}
-                fillOpacity={1} 
-                fill="url(#colorJobs)" 
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </motion.div>
+        <h2 className="text-2xl font-semibold text-gray-900 dark:text-[#F6F7F9]">
+          Video Translate Done
+        </h2>
 
-      {/* Recent Jobs */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.5 }}
-        className="bg-[#0F1113] rounded-2xl p-6 ring-1 ring-white/5"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl">Recent Jobs</h3>
-          <button className="text-[#FFCB00] hover:text-[#FFD766] transition-colors text-sm">
-            View All
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          {recentJobs.map((job, index) => (
+        {/* Video Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {videos.map((video, index) => (
             <motion.div
-              key={job.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
-              className="flex items-center gap-4 p-4 rounded-xl bg-[#0B0B0D]/50 hover:bg-[#0B0B0D] transition-all duration-200 group"
+              key={video.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.5 + index * 0.1 }}
+              className="bg-gray-100 dark:bg-[#0F1113] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-200 group"
             >
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                job.status === 'completed' ? 'bg-green-400/10' :
-                job.status === 'processing' ? 'bg-[#FFCB00]/10' :
-                'bg-red-400/10'
-              }`}>
-                {job.status === 'completed' && <CheckCircle2 className="w-5 h-5 text-green-400" />}
-                {job.status === 'processing' && <Clock className="w-5 h-5 text-[#FFCB00]" />}
-                {job.status === 'failed' && <AlertCircle className="w-5 h-5 text-red-400" />}
-              </div>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-sm truncate text-[#F6F7F9]">{job.name}</p>
-                  <span className="text-xs px-2 py-0.5 rounded bg-white/5 text-[#AAB0B8] shrink-0">
-                    {job.type}
-                  </span>
-                </div>
-                {job.status === 'processing' ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-[#0B0B0D] rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${job.progress}%` }}
-                        className="h-full bg-gradient-to-r from-[#FFCB00] to-[#FFD766]"
-                      />
-                    </div>
-                    <span className="text-xs text-[#AAB0B8]">{job.progress}%</span>
+              {/* Video Thumbnail */}
+              <div 
+                className="relative aspect-video bg-gray-200 dark:bg-[#0B0B0D] overflow-hidden group/video cursor-pointer"
+                onClick={() => handleVideoClick(video.id)}
+              >
+                {/* Video Element */}
+                <video
+                  ref={(el) => (videoRefs.current[video.id] = el)}
+                  className="w-full h-full object-cover"
+                  {...(video.thumbnail && { poster: video.thumbnail })}
+                  preload="metadata"
+                  muted
+                  loop
+                  playsInline
+                  onEnded={() => handleVideoEnd(video.id)}
+                  onLoadedMetadata={(e) => handleVideoLoadedMetadata(video.id, e.target)}
+                  onTimeUpdate={(e) => {
+                    // Update progress bar and current time
+                    const videoElement = e.target;
+                    if (videoElement.duration) {
+                      const progress = (videoElement.currentTime / videoElement.duration) * 100;
+                      setVideoProgress((prev) => ({
+                        ...prev,
+                        [video.id]: progress,
+                      }));
+                      setCurrentTimes((prev) => ({
+                        ...prev,
+                        [video.id]: videoElement.currentTime,
+                      }));
+                    }
+                  }}
+                >
+                  <source src={video.videoUrl} type={video.videoUrl.endsWith('.webm') ? 'video/webm' : 'video/mp4'} />
+                  Your browser does not support the video tag.
+                </video>
+                
+                {/* Play/Pause button overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover/video:opacity-100 transition-opacity pointer-events-none">
+                  <div className="w-14 h-14 rounded-full bg-white/90 dark:bg-[#0F1113]/90 flex items-center justify-center shadow-lg">
+                    {playingVideo === video.id ? (
+                      <Pause className="w-7 h-7 text-gray-700 dark:text-[#AAB0B8]" fill="currentColor" />
+                    ) : (
+                      <Play className="w-7 h-7 text-gray-700 dark:text-[#AAB0B8] ml-1" fill="currentColor" />
+                    )}
                   </div>
-                ) : (
-                  <p className="text-xs text-[#AAB0B8]">{job.time}</p>
-                )}
+                </div>
+                
+                {/* Live Duration overlay - bottom right */}
+                <div className="absolute bottom-8 right-3 px-2 py-1 bg-black/50 rounded text-white text-xs font-medium z-10">
+                  {formatTime(currentTimes[video.id] || 0)} / {formatTime(videoDurations[video.id] || 0)}
+                </div>
+                
+                {/* Download icon - bottom right above progress */}
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Handle download logic here
+                  }}
+                  className="absolute bottom-8 right-12 p-1.5 bg-black/50 rounded opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                >
+                  <Download className="w-4 h-4 text-white" />
+                </button>
+                
+                {/* Red Progress Line - Bottom (YouTube style) */}
+                <div 
+                  className="absolute bottom-0 left-0 h-0.5 bg-red-600 z-30 transition-all duration-75 ease-linear" 
+                  style={{ width: `${videoProgress[video.id] || 0}%` }} 
+                />
               </div>
 
-              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                {job.status === 'completed' && (
-                  <>
-                    <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                      <Play className="w-4 h-4 text-[#AAB0B8]" />
-                    </button>
-                    <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                      <Download className="w-4 h-4 text-[#AAB0B8]" />
-                    </button>
-                  </>
-                )}
-                <button className="p-2 rounded-lg hover:bg-white/5 transition-colors">
-                  <MoreVertical className="w-4 h-4 text-[#AAB0B8]" />
-                </button>
+              {/* Video Info */}
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-gray-800 dark:text-[#F6F7F9]">
+                    {video.title}
+                  </span>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Handle download logic here
+                    }}
+                    className="p-1.5 hover:bg-gray-200 dark:hover:bg-white/5 rounded transition-colors"
+                  >
+                    <Download className="w-5 h-5 text-gray-600 dark:text-[#AAB0B8]" />
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}

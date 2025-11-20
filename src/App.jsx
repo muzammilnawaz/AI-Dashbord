@@ -11,6 +11,8 @@ import { ThemeProvider } from './contexts/ThemeContext.jsx';
 // Import all page components
 import { DashboardPage } from './components/pages/DashboardPage.jsx';
 import { DubbingPage } from './components/pages/DubbingPage.jsx';
+import { DubbingStep2Page } from './components/pages/DubbingStep2Page.jsx';
+import { DubbingStep3Page } from './components/pages/DubbingStep3Page.jsx';
 import { TTSPage } from './components/pages/TTSPage.jsx';
 import { STTPage } from './components/pages/STTPage.jsx';
 import { VoiceCloningPage } from './components/pages/VoiceCloningPage.jsx';
@@ -19,22 +21,55 @@ import { MovieStudioPage } from './components/pages/MovieStudioPage.jsx';
 import { FilmStudioPage } from './components/pages/FilmStudioPage.jsx';
 import { AIAgentsPage } from './components/pages/AIAgentsPage.jsx';
 import { SettingsPage } from './components/pages/SettingsPage.jsx';
-import { OnboardingPage } from './components/pages/OnboardingPage.jsx';
 
 export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showContent, setShowContent] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
-  const [userName, setUserName] = useState('');
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    // Load login state from localStorage on initial render
+    const saved = localStorage.getItem('isLoggedIn');
+    return saved === 'true';
+  });
+  const [userEmail, setUserEmail] = useState(() => {
+    return localStorage.getItem('userEmail') || '';
+  });
+  const [userName, setUserName] = useState(() => {
+    return localStorage.getItem('userName') || '';
+  });
+  const [currentPage, setCurrentPage] = useState(() => {
+    return localStorage.getItem('currentPage') || 'dashboard';
+  });
 
   useEffect(() => {
     // Show content after logo animation
     const timer = setTimeout(() => setShowContent(true), 400);
     return () => clearTimeout(timer);
   }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('isLoggedIn', isLoggedIn.toString());
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (userEmail) {
+      localStorage.setItem('userEmail', userEmail);
+    } else {
+      localStorage.removeItem('userEmail');
+    }
+  }, [userEmail]);
+
+  useEffect(() => {
+    if (userName) {
+      localStorage.setItem('userName', userName);
+    } else {
+      localStorage.removeItem('userName');
+    }
+  }, [userName]);
+
+  useEffect(() => {
+    localStorage.setItem('currentPage', currentPage);
+  }, [currentPage]);
 
   const handleLoginSuccess = (email) => {
     setUserEmail(email);
@@ -46,11 +81,6 @@ export default function App() {
       setUserEmail(userData.email);
       setUserName(userData.fullName);
     }
-    setShowOnboarding(true);
-  };
-
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
     setIsLoggedIn(true);
   };
 
@@ -60,8 +90,17 @@ export default function App() {
     setUserName('');
     setCurrentPage('dashboard');
     setShowContent(false);
+    // Clear localStorage on logout
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('currentPage');
     // Re-trigger content animation
     setTimeout(() => setShowContent(true), 100);
+  };
+
+  const handlePageNavigate = (page) => {
+    setCurrentPage(page);
   };
 
   const renderPage = () => {
@@ -69,7 +108,11 @@ export default function App() {
       case 'dashboard':
         return <DashboardPage />;
       case 'dubbing':
-        return <DubbingPage />;
+        return <DubbingPage onNavigate={handlePageNavigate} />;
+      case 'dubbing-step-2':
+        return <DubbingStep2Page onNavigate={handlePageNavigate} />;
+      case 'dubbing-step-3':
+        return <DubbingStep3Page onNavigate={handlePageNavigate} />;
       case 'tts':
         return <TTSPage />;
       case 'stt':
@@ -95,17 +138,7 @@ export default function App() {
     <ThemeProvider>
       <div className="min-h-screen bg-[#0B0B0D] overflow-x-hidden">
         <AnimatePresence mode="wait">
-        {showOnboarding ? (
-          <motion.div
-            key="onboarding"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <OnboardingPage onComplete={handleOnboardingComplete} />
-          </motion.div>
-        ) : !isLoggedIn ? (
+        {!isLoggedIn ? (
           <motion.div
             key="login"
             initial={{ opacity: 1 }}
